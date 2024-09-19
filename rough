@@ -1,0 +1,78 @@
+# Importing the necessary libraries
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+# Sample data generation for demonstration purposes
+# You should replace this with actual historical sales and demand data
+np.random.seed(42)
+data_size = 1000
+months = np.arange(1, data_size+1)
+previous_sales = np.random.randint(50, 200, size=data_size)  
+
+# Generating random demand values (You should replace with actual demand data)
+demand = np.random.uniform(0.5, 1.5, size=data_size)  # Demand multiplier
+
+# Target variable: the next month's sales based on demand and previous sales
+next_sales = previous_sales * demand + np.random.normal(0, 10, size=data_size)
+
+# Creating a DataFrame for easier handling
+df = pd.DataFrame({
+    'Month': months,
+    'Previous_Sales': previous_sales,
+    'Demand': demand,
+    'Next_Sales': next_sales
+})
+
+# Features (Previous Sales, Demand)
+X = df[['Previous_Sales', 'Demand']].values
+
+# Target (Next Sales)
+y = df['Next_Sales'].values
+
+# Splitting the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Normalizing the features
+scaler = MinMaxScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Building the neural network model
+model = Sequential([
+    Dense(64, input_dim=2, activation='relu'),  # Input layer (2 features: Previous_Sales, Demand)
+    Dense(32, activation='relu'),               # Hidden layer
+    Dense(16, activation='relu'),               # Hidden layer
+    Dense(1)                                    # Output layer (predicting Next Sales)
+])
+
+# Compiling the model
+model.compile(optimizer='adam', loss='mse')
+
+# Training the model
+history = model.fit(X_train_scaled, y_train, epochs=100, batch_size=32, validation_split=0.2)
+
+# Evaluating the model
+loss = model.evaluate(X_test_scaled, y_test)
+print(f'Test Loss: {loss}')
+
+# Making predictions
+predictions = model.predict(X_test_scaled)
+
+# Displaying the first 5 predictions and true values
+for i in range(5):
+    print(f"Predicted: {predictions[i][0]:.2f}, Actual: {y_test[i]:.2f}")
+
+# Plotting the training and validation loss over epochs
+import matplotlib.pyplot as plt
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss Over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
